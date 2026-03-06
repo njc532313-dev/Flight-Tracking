@@ -473,17 +473,28 @@
 
     td {
       padding: 0.875rem 0.75rem;
+      font-size: var(--text-sm);
       font-weight: 500;
     }
 
     td.airport-name {
       font-weight: 700;
-      font-size: var(--text-base);
+      font-size: var(--text-sm);
+      white-space: nowrap;
+    }
+
+    td.airport-country {
+      font-weight: 600;
+      font-size: var(--text-sm);
+      color: var(--gray-600);
+      white-space: nowrap;
+      min-width: 4rem;
     }
 
     td.airport-code {
       color: var(--gray-400);
       font-weight: 400;
+      font-size: var(--text-sm);
     }
 
     /* 註解區塊 */
@@ -790,18 +801,12 @@
           <p class="section-subtitle">數據日期：2026-03-05 · 未來可能變化</p>
         </header>
 
-        <div class="heatmap-container">
-          <div class="heatmap-header">
-            <span class="heatmap-title">每日取消率熱力圖</span>
-            <span class="breakpoint-badge">⚡ 斷點 02-28</span>
-          </div>
-          <div class="heatmap" id="heatmap-rates"></div>
-        </div>
-
+        <!-- 移除熱力圖，只保留表格 -->
         <div class="table-container">
           <table>
             <thead>
               <tr>
+                <th>國家</th>
                 <th>機場</th>
                 <th>02-26</th>
                 <th>02-27</th>
@@ -831,18 +836,28 @@
           <p class="section-subtitle">數據日期：2026-03-05 · 未來可能變化</p>
         </header>
 
-        <div class="heatmap-container">
-          <div class="heatmap-header">
-            <span class="heatmap-title">每日取消班次熱力圖</span>
-            <span class="breakpoint-badge">⚡ 斷點 02-28</span>
-          </div>
-          <div class="heatmap" id="heatmap-counts"></div>
+        <div class="table-container" style="margin-bottom:calc(var(--grid-unit)*2);">
+          <table>
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>DXB<br><span style="font-weight:400;text-transform:none;letter-spacing:0;">迪拜</span></th>
+                <th>DOH<br><span style="font-weight:400;text-transform:none;letter-spacing:0;">多哈</span></th>
+                <th>AUH<br><span style="font-weight:400;text-transform:none;letter-spacing:0;">阿布扎比</span></th>
+                <th>JED<br><span style="font-weight:400;text-transform:none;letter-spacing:0;">吉達</span></th>
+                <th>RUH<br><span style="font-weight:400;text-transform:none;letter-spacing:0;">利雅得</span></th>
+                <th>當日合計</th>
+              </tr>
+            </thead>
+            <tbody id="dailySummaryTable"></tbody>
+          </table>
         </div>
 
         <div class="table-container">
           <table>
             <thead>
               <tr>
+                <th>國家</th>
                 <th>機場</th>
                 <th>02-26</th>
                 <th>02-27</th>
@@ -988,102 +1003,88 @@
       return                { bg:'#f7f7f7', fg:'#a0a0a0' };
     }
 
-    // 第一部分：取消率熱力圖
-    (function() {
-      const el = document.getElementById('heatmap-rates');
-      let html = '<div class="hm-header"></div>';
-      DATES.forEach((d, i) => {
-        const isBreakpoint = d === '02-28';
-        html += `<div class="hm-header ${isBreakpoint ? 'breakpoint' : ''}">${d}${isBreakpoint ? ' ⚡' : ''}</div>`;
-      });
-
-      Object.entries(D1).forEach(([code, info]) => {
-        html += `<div class="hm-label">${info.city} <span style="color:var(--gray-400);margin-left:0.5rem;">${code}</span></div>`;
-        info.rates.forEach(v => {
-          const { bg, fg } = rc(v);
-          html += `<div class="hm-cell" style="background:${bg};color:${fg}">${v.toFixed(v >= 10 ? 0 : 1)}%</div>`;
-        });
-      });
-
-      el.innerHTML = html;
-    })();
-
     // 第一部分：取消率表格
     (function() {
+      const COUNTRY = {
+        DXB:'阿聯酋', DOH:'卡塔爾', AUH:'阿聯酋', JED:'沙特阿拉伯', RUH:'沙特阿拉伯'
+      };
       const tbody = document.getElementById('rateTable');
       Object.entries(D1).forEach(([code, info]) => {
         const pre = (info.rates[0] + info.rates[1]) / 2;
         const post = info.rates.slice(2).reduce((a, b) => a + b, 0) / 5;
 
-        let html = `
-          <tr>
-            <td class="airport-name">${info.city} <span class="airport-code">${code}</span></td>
-        `;
+        let html = `<tr>
+            <td class="airport-country">${COUNTRY[code]}</td>
+            <td class="airport-name">${info.city} <span class="airport-code">${code}</span></td>`;
 
         info.rates.forEach((v, i) => {
           const { bg, fg } = rc(v);
           const isBreakpoint = i === 2;
-          const style = isBreakpoint ? `background:${bg};color:${fg};font-weight:800;font-size:0.9375rem;` : `background:${bg};color:${fg};`;
-          html += `<td style="${style}">${v.toFixed(1)}%</td>`;
+          const bpStyle = isBreakpoint ? 'font-weight:800;' : '';
+          html += `<td style="background:${bg};color:${fg};${bpStyle}">${v.toFixed(1)}%</td>`;
         });
 
-        html += `
-            <td style="color:#38a169;font-weight:600;">${pre.toFixed(1)}%</td>
+        html += `<td style="color:#38a169;font-weight:600;">${pre.toFixed(1)}%</td>
             <td style="color:var(--accent);font-weight:700;">${post.toFixed(1)}%</td>
-          </tr>
-        `;
+          </tr>`;
 
         tbody.innerHTML += html;
       });
     })();
 
-    // 第二部分：取消班次熱力圖
+    // 第二部分：每日合計統計表
     (function() {
-      const el = document.getElementById('heatmap-counts');
-      let html = '<div class="hm-header"></div>';
-      DATES.forEach((d, i) => {
-        const isBreakpoint = d === '02-28';
-        html += `<div class="hm-header ${isBreakpoint ? 'breakpoint' : ''}">${d}${isBreakpoint ? ' ⚡' : ''}</div>`;
-      });
-
-      Object.entries(D1).forEach(([code, info]) => {
-        html += `<div class="hm-label">${info.city} <span style="color:var(--gray-400);margin-left:0.5rem;">${code}</span></div>`;
-        info.counts.forEach(v => {
+      const tbody = document.getElementById('dailySummaryTable');
+      const airports = Object.keys(D1);
+      DATES.forEach((date, i) => {
+        const isBreakpoint = date === '02-28';
+        const perAirport = airports.map(code => D1[code].counts[i]);
+        const dayTotal = perAirport.reduce((a, b) => a + b, 0);
+        const { bg: tbg, fg: tfg } = cc(dayTotal);
+        let row = `<tr>
+          <td style="font-weight:${isBreakpoint?'800':'600'};color:${isBreakpoint?'var(--accent)':'var(--black)'};">${date}${isBreakpoint?' ⚡':''}</td>`;
+        perAirport.forEach(v => {
           const { bg, fg } = cc(v);
-          html += `<div class="hm-cell" style="background:${bg};color:${fg}">${v}</div>`;
+          row += `<td style="background:${bg};color:${fg};">${v}</td>`;
         });
+        row += `<td style="background:${tbg};color:${tfg};font-weight:700;">${dayTotal}</td></tr>`;
+        tbody.innerHTML += row;
       });
-
-      el.innerHTML = html;
+      // 合計行
+      const totalsRow = airports.map(code => D1[code].counts.reduce((a,b)=>a+b,0));
+      const grandTotal = totalsRow.reduce((a,b)=>a+b,0);
+      let sumRow = `<tr style="border-top:2px solid var(--black);font-weight:700;"><td>7日合計</td>`;
+      totalsRow.forEach(v => { sumRow += `<td>${v}</td>`; });
+      sumRow += `<td style="color:var(--accent);font-weight:800;">${grandTotal}</td></tr>`;
+      tbody.innerHTML += sumRow;
     })();
 
     // 第二部分：取消班次表格
     (function() {
+      const COUNTRY = {
+        DXB:'阿聯酋', DOH:'卡塔爾', AUH:'阿聯酋', JED:'沙特阿拉伯', RUH:'沙特阿拉伯'
+      };
       const tbody = document.getElementById('countTable');
       Object.entries(D1).forEach(([code, info]) => {
-        let html = `
-          <tr>
-            <td class="airport-name">${info.city} <span class="airport-code">${code}</span></td>
-        `;
+        let html = `<tr>
+            <td class="airport-country">${COUNTRY[code]}</td>
+            <td class="airport-name">${info.city} <span class="airport-code">${code}</span></td>`;
 
         info.counts.forEach((v, i) => {
           const { bg, fg } = cc(v);
           const isBreakpoint = i === 2;
-          const style = isBreakpoint ? `background:${bg};color:${fg};font-weight:800;font-size:0.9375rem;` : `background:${bg};color:${fg};`;
           const rate = info.totals[i] ? (v / info.totals[i] * 100).toFixed(1) : '-';
-          html += `<td style="${style}">${v}<br><span style="font-size:0.625rem;color:var(--gray-500);">${rate}%</span></td>`;
+          html += `<td style="background:${bg};color:${fg};${isBreakpoint?'font-weight:800;':''}">${v}<br><span style="font-size:0.625rem;color:inherit;opacity:0.75;">${rate}%</span></td>`;
         });
 
         const totalCancelled = info.counts.reduce((a, b) => a + b, 0);
         const totalFlights = info.totals.reduce((a, b) => a + b, 0);
         const avgRate = totalFlights ? (totalCancelled / totalFlights * 100).toFixed(1) : '-';
 
-        html += `
-            <td style="color:var(--accent);font-weight:700;">${totalCancelled}</td>
+        html += `<td style="color:var(--accent);font-weight:700;">${totalCancelled}</td>
             <td>${totalFlights}</td>
             <td style="color:var(--accent);font-weight:700;">${avgRate}%</td>
-          </tr>
-        `;
+          </tr>`;
 
         tbody.innerHTML += html;
       });
